@@ -17,15 +17,18 @@
     const badge = isUpcoming
       ? '<span class="card-badge upcoming">' + CV.icon("clock") + 'Будет</span>'
       : '<span class="card-badge">' + CV.icon("check") + 'Проведён</span>';
-    const imgBlock = r.images && r.images.length
-      ? '<img src="' + r.images[0] + '" alt="' + CV.escapeHtml(r.title) + '">'
-      : (r.image
-        ? '<img src="' + r.image + '" alt="' + CV.escapeHtml(r.title) + '">'
-        : '<div class="placeholder">' + CV.icon("image") + '</div>');
-    const photoCount = (r.images && r.images.length) || (r.image ? 1 : 0);
+    const allImages = (r.images && r.images.length) ? r.images.slice() : (r.image ? [r.image] : []);
+    const photoCount = allImages.length;
+    const imgBlock = photoCount
+      ? '<img src="' + allImages[0] + '" alt="' + CV.escapeHtml(r.title) + '">'
+      : '<div class="placeholder">' + CV.icon("image") + '</div>';
     const photoBadge = photoCount > 1
       ? '<span class="photo-badge">' + CV.icon("camera") + photoCount + '</span>'
       : '';
+    const clickableAttrs = photoCount ? ' data-raid-id="' + r.id + '" role="button" tabindex="0" aria-label="Открыть фото рейда"' : '';
+    const imgWrap = photoCount
+      ? '<div class="card-img-clickable"' + clickableAttrs + '>' + badge + photoBadge + imgBlock + '</div>'
+      : '<div class="card-img">' + badge + photoBadge + imgBlock + '</div>';
     const tags = (r.tags || []).map(function(t){
       return '<span class="tag">' + CV.escapeHtml(t) + '</span>';
     }).join("");
@@ -35,15 +38,20 @@
     if(r.location) meta.push('<span>' + CV.icon("location") + CV.escapeHtml(r.location) + '</span>');
     const extra = [];
     if(!isUpcoming){
-      if(r.participants) extra.push('<span class="tag" style="background:var(--green-50)">' + CV.icon("users") + ' ' + r.participants + ' чел.</span>');
-      if(r.bags) extra.push('<span class="tag" style="background:var(--green-50)">' + CV.icon("bag") + ' ' + r.bags + ' мешков</span>');
+      if(r.participants) extra.push('<span class="tag">' + CV.icon("users") + r.participants + ' чел.</span>');
+      if(r.bags) extra.push('<span class="tag">' + CV.icon("bag") + r.bags + ' мешков</span>');
     }
     return '<article class="card">' +
-      '<div class="card-img">' + badge + photoBadge + imgBlock + '</div>' +
+      imgWrap +
       '<div class="card-body">' +
         '<h3>' + CV.escapeHtml(r.title) + '</h3>' +
         '<div class="card-meta">' + meta.join("") + '</div>' +
         '<p class="card-desc">' + CV.escapeHtml(r.description) + '</p>' +
+        (photoCount > 1
+          ? '<button type="button" class="btn btn-ghost btn-sm gallery-trigger" data-raid-id="' + r.id + '" style="margin-top:4px;align-self:flex-start">' + CV.icon("image") + 'Смотреть все ' + photoCount + ' фото</button>'
+          : (photoCount === 1
+            ? '<button type="button" class="btn btn-ghost btn-sm gallery-trigger" data-raid-id="' + r.id + '" style="margin-top:4px;align-self:flex-start">' + CV.icon("image") + 'Открыть фото</button>'
+            : '')) +
         '<div class="card-tags">' + tags + extra.join("") + '</div>' +
       '</div>' +
     '</article>';
@@ -66,6 +74,134 @@
       return;
     }
     grid.innerHTML = list.map(raidCard).join("");
+    bindGalleryTriggers();
+  }
+
+  function getRaidById(id){
+    for(let i = 0; i < raids.length; i++){
+      if(raids[i].id === id) return raids[i];
+    }
+    return null;
+  }
+
+  function getRaidImages(r){
+    if(!r) return [];
+    if(r.images && r.images.length) return r.images.slice();
+    if(r.image) return [r.image];
+    return [];
+  }
+
+  function bindGalleryTriggers(){
+    const triggers = document.querySelectorAll("[data-raid-id]");
+    triggers.forEach(function(el){
+      if(el.dataset.bound === "1") return;
+      el.dataset.bound = "1";
+      el.addEventListener("click", function(e){
+        e.preventDefault();
+        openLightbox(el.dataset.raidId);
+      });
+      el.addEventListener("keydown", function(e){
+        if(e.key === "Enter" || e.key === " "){
+          e.preventDefault();
+          openLightbox(el.dataset.raidId);
+        }
+      });
+    });
+  }
+
+  let lightboxState = {images: [], index: 0, raid: null};
+
+  function openLightbox(raidId){
+    const raid = getRaidById(raidId);
+    if(!raid) return;
+    const images = getRaidImages(raid);
+    if(!images.length) return;
+    lightboxState = {images: images, index: 0, raid: raid};
+    renderLightbox();
+    document.addEventListener("keydown", onLightboxKey);
+    document.body.style.overflow = "hidden";
+  }
+
+  function onLightboxKey(e){
+    if(e.key === "Escape") closeLightbox();
+    else if(e.key === "ArrowRight") lightboxNext();
+    else if(e.key === "ArrowLeft") lightboxPrev();
+  }
+
+  function lightboxNext(){
+    if(!lightboxState.images.length) return;
+    lightboxState.index = (lightboxState.index + 1) % lightboxState.images.length;
+    renderLightboxContent();
+  }
+
+  function lightboxPrev(){
+    if(!lightboxState.images.length) return;
+    lightboxState.index = (lightboxState.index - 1 + lightboxState.images.length) % lightboxState.images.length;
+    renderLightboxContent();
+  }
+
+  function closeLightbox(){
+    const el = document.getElementById("cvLightbox");
+    if(el) el.parentNode.removeChild(el);
+    document.removeEventListener("keydown", onLightboxKey);
+    document.body.style.overflow = "";
+    lightboxState = {images: [], index: 0, raid: null};
+  }
+
+  function renderLightboxContent(){
+    const counter = document.getElementById("lbCounter");
+    const main = document.getElementById("lbMain");
+    const dots = document.getElementById("lbDots");
+    if(!counter || !main || !dots) return;
+    const total = lightboxState.images.length;
+    const i = lightboxState.index;
+    counter.textContent = (i + 1) + " / " + total;
+    main.innerHTML = '<img src="' + lightboxState.images[i] + '" alt="' + CV.escapeHtml(lightboxState.raid.title || "Фото рейда") + '">';
+    dots.innerHTML = lightboxState.images.map(function(src, idx){
+      return '<button class="lb-dot' + (idx === i ? " active" : "") + '" data-i="' + idx + '" aria-label="Фото ' + (idx + 1) + '"></button>';
+    }).join("");
+    dots.querySelectorAll(".lb-dot").forEach(function(b){
+      b.addEventListener("click", function(){
+        lightboxState.index = parseInt(b.dataset.i, 10);
+        renderLightboxContent();
+      });
+    });
+  }
+
+  function renderLightbox(){
+    let el = document.getElementById("cvLightbox");
+    if(el) el.parentNode.removeChild(el);
+    const total = lightboxState.images.length;
+    el = document.createElement("div");
+    el.id = "cvLightbox";
+    el.className = "lightbox";
+    el.innerHTML = '' +
+      '<div class="lb-backdrop" id="lbBackdrop"></div>' +
+      '<button class="lb-close" id="lbClose" aria-label="Закрыть">' + CV.icon("x") + '</button>' +
+      (total > 1 ? '<button class="lb-nav lb-prev" id="lbPrev" aria-label="Назад">' + CV.icon("arrow") + '</button>' : '') +
+      (total > 1 ? '<button class="lb-nav lb-next" id="lbNext" aria-label="Вперёд" style="transform:rotate(180deg)">' + CV.icon("arrow") + '</button>' : '') +
+      '<div class="lb-content">' +
+        '<div class="lb-stage" id="lbMain"></div>' +
+        '<div class="lb-info">' +
+          '<h3>' + CV.escapeHtml(lightboxState.raid.title || "Фото рейда") + '</h3>' +
+          (lightboxState.raid.location ? '<p>' + CV.icon("location") + CV.escapeHtml(lightboxState.raid.location) + '</p>' : '') +
+          '<span class="lb-counter" id="lbCounter">1 / ' + total + '</span>' +
+        '</div>' +
+        (total > 1 ? '<div class="lb-dots" id="lbDots"></div>' : '<div id="lbDots" style="display:none"></div>') +
+      '</div>';
+    document.body.appendChild(el);
+    renderLightboxContent();
+    el.style.display = "flex";
+    el.classList.add("open");
+    document.getElementById("lbBackdrop").addEventListener("click", closeLightbox);
+    document.getElementById("lbClose").addEventListener("click", closeLightbox);
+    if(total > 1){
+      document.getElementById("lbPrev").addEventListener("click", lightboxPrev);
+      document.getElementById("lbNext").addEventListener("click", lightboxNext);
+    }
+    el.addEventListener("click", function(e){
+      if(e.target === el) closeLightbox();
+    });
   }
 
   function renderUpcoming(){
