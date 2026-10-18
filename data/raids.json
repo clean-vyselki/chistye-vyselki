@@ -20,5 +20,27 @@
     ],
     "participants": 3,
     "bags": 1
+  },
+  {
+    "id": "r-mvdyapfp-pefvy",
+    "type": "past",
+    "title": "Очистка пер. Коммунаров",
+    "date": "2026-10-17",
+    "time": "14:00",
+    "location": "пер. Коммунаров",
+    "description": "Дорогие друзья! Подведём итоги нашего рейда по переулку Коммунаров. 🌿\n\nНам удалось собрать из открытых участков водостока на переулке Коммунаров от набережной до соц.защиты около 7-8 килограммов мусора. Получился полный пакет. Все участвующие остались довольны!\nИнициаторы рейда: Крюков Сергей, Балиев Тимур.\nВ сборе мусора участвовали: Балиев Тимур, Крюков Сергей, Бардаков Захар, Федотов Роман, Степаненко Димитрий.\nТакже произошла одна нестандартная ситуация: один мальчик под именем Егор Швытков пожертвовал нашему сообществу \"Чистые Выселки\" 50 рублей! Спасибо Егору",
+    "tags": [
+      "Пластик",
+      "Мусор",
+      "Чистота"
+    ],
+    "images": [
+      "https://raw.githubusercontent.com/clean-vyselki/chistye-vyselki/main/data/photos/raid-1792335520969-0-wbc68az3.jpg?t=1792335523144",
+      "https://raw.githubusercontent.com/clean-vyselki/chistye-vyselki/main/data/photos/raid-1792335523247-1-fitwmkmy.jpg?t=1792335525121",
+      "https://raw.githubusercontent.com/clean-vyselki/chistye-vyselki/main/data/photos/raid-1792335525205-2-dvuuxboh.jpg?t=1792335526772",
+      "https://raw.githubusercontent.com/clean-vyselki/chistye-vyselki/main/data/photos/raid-1792335526867-3-kp3xvjop.jpg?t=1792335528806"
+    ],
+    "participants": 5,
+    "bags": 0
   }
 ]
