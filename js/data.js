@@ -152,7 +152,8 @@ CV.apiGetSha = function(path){
   .then(function(data){ return data ? data.sha : null; });
 };
 
-CV.apiPutJson = function(path, content, message){
+CV.apiPutJson = function(path, content, message, attempt){
+  attempt = attempt || 0;
   return CV.apiGetSha(path)
     .then(function(sha){
       const body = {
@@ -169,11 +170,14 @@ CV.apiPutJson = function(path, content, message){
           "Content-Type": "application/json"
         },
         body: JSON.stringify(body)
+      }).then(function(r){
+        if((r.status === 409 || r.status === 422) && attempt < 3){
+          return new Promise(function(resolve){ setTimeout(resolve, 500); })
+            .then(function(){ return CV.apiPutJson(path, content, message, attempt + 1); });
+        }
+        if(!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
       });
-    })
-    .then(function(r){
-      if(!r.ok) throw new Error("HTTP " + r.status);
-      return r.json();
     });
 };
 

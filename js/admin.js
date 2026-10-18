@@ -494,20 +494,29 @@
     if(!confirm("Удалить этот рейд? Действие нельзя отменить.")) return;
     let raids = CV.loadRaids();
     const raid = raids.filter(function(r){return r.id === id;})[0];
+    if(!raid){
+      CV.toast("Рейд уже удалён");
+      const activePanel = document.querySelector(".admin-nav-item.active").dataset.panel;
+      renderPanel(activePanel);
+      return;
+    }
     raids = raids.filter(function(r){return r.id !== id;});
     CV.toast("Удаляю...");
-    const deletePhotos = raid && raid.images && raid.images.length
+    CV.localSet(CV.STORAGE_KEYS.raids, raids);
+    const activePanel = document.querySelector(".admin-nav-item.active").dataset.panel;
+    renderPanel(activePanel);
+    const deletePhotos = raid.images && raid.images.length
       ? Promise.all(raid.images.map(function(url){ return CV.deletePhotoRemote(url); }))
       : Promise.resolve();
     deletePhotos
-      .then(function(){ return CV.saveRaidsRemote(raids, "Delete raid " + (raid ? raid.title : id)); })
+      .then(function(){ return CV.saveRaidsRemote(raids, "Delete raid " + raid.title); })
       .then(function(){
         CV.toast("Рейд удалён");
-        const activePanel = document.querySelector(".admin-nav-item.active").dataset.panel;
         renderPanel(activePanel);
       })
       .catch(function(err){
         CV.toast("Ошибка удаления: " + err.message);
+        CV.fetchRaids().then(function(){ renderPanel(activePanel); });
       });
   }
 
