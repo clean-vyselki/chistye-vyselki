@@ -146,11 +146,13 @@
     }
     wrap.innerHTML = '<table class="table"><thead><tr><th>Фото</th><th>Название</th><th>Дата</th><th>Место</th><th>Участников</th><th>Мешков</th><th style="width:80px">Действия</th></tr></thead><tbody>' +
       raids.map(function(r){
-        const thumb = r.image
-          ? '<img class="thumb" src="' + r.image + '" alt="">'
+        const img = firstImage(r);
+        const thumb = img
+          ? '<img class="thumb" src="' + img + '" alt="">'
           : '<div class="thumb" style="display:flex;align-items:center;justify-content:center">' + CV.icon("image") + '</div>';
+        const photoIndicator = (r.images && r.images.length > 1) ? '<span class="thumb-count" style="position:static;display:inline-flex;margin-top:4px">' + r.images.length + ' фото</span>' : '';
         return '<tr>' +
-          '<td>' + thumb + '</td>' +
+          '<td>' + thumb + photoIndicator + '</td>' +
           '<td><strong>' + CV.escapeHtml(r.title) + '</strong></td>' +
           '<td>' + CV.escapeHtml(CV.formatDate(r.date)) + '</td>' +
           '<td>' + CV.escapeHtml(r.location) + '</td>' +
@@ -208,11 +210,13 @@
     }
     wrap.innerHTML = '<table class="table"><thead><tr><th>Фото</th><th>Название</th><th>Дата</th><th>Время</th><th>Место</th><th style="width:80px">Действия</th></tr></thead><tbody>' +
       raids.map(function(r){
-        const thumb = r.image
-          ? '<img class="thumb" src="' + r.image + '" alt="">'
+        const img = firstImage(r);
+        const thumb = img
+          ? '<img class="thumb" src="' + img + '" alt="">'
           : '<div class="thumb" style="display:flex;align-items:center;justify-content:center">' + CV.icon("image") + '</div>';
+        const photoIndicator = (r.images && r.images.length > 1) ? '<span class="thumb-count" style="position:static;display:inline-flex;margin-top:4px">' + r.images.length + ' фото</span>' : '';
         return '<tr>' +
-          '<td>' + thumb + '</td>' +
+          '<td>' + thumb + photoIndicator + '</td>' +
           '<td><strong>' + CV.escapeHtml(r.title) + '</strong></td>' +
           '<td>' + CV.escapeHtml(CV.formatDate(r.date)) + '</td>' +
           '<td>' + (r.time || "—") + '</td>' +
@@ -232,6 +236,12 @@
     });
   }
 
+  function firstImage(r){
+    if(r.images && r.images.length) return r.images[0];
+    if(r.image) return r.image;
+    return "";
+  }
+
   function openRaidModal(type, id){
     let raid = null;
     if(id){
@@ -246,11 +256,14 @@
       time: "",
       location: "",
       description: "",
-      image: "",
+      images: [],
       tags: [],
       participants: 0,
       bags: 0
     };
+    let photos = [];
+    if(data.images && data.images.length) photos = data.images.slice();
+    else if(data.image) photos = [data.image];
 
     const backdrop = document.createElement("div");
     backdrop.className = "modal-backdrop open";
@@ -288,16 +301,14 @@
               '</div>'
             : '') +
           '<div class="field">' +
-            '<label>Фото рейда</label>' +
+            '<label>Фото рейда (можно несколько)</label>' +
             '<label class="file-drop" for="mPhoto">' +
               CV.icon("upload") +
-              '<span id="mPhotoLabel">' + (data.image ? "Заменить фото" : "Загрузить фото") + '</span>' +
+              '<span id="mPhotoLabel">Добавить фото — можно выбрать несколько</span>' +
               '<span class="filename" id="mFileName"></span>' +
             '</label>' +
-            '<input type="file" id="mPhoto" accept="image/*" style="display:none">' +
-            '<div class="preview-img" id="mPreview" style="' + (data.image ? "display:block" : "display:none") + '">' +
-              (data.image ? '<img src="' + data.image + '" alt="">' : '') +
-            '</div>' +
+            '<input type="file" id="mPhoto" accept="image/*" multiple style="display:none">' +
+            '<div class="thumb-grid" id="mThumbs"></div>' +
           '</div>' +
         '</div>' +
         '<div class="modal-foot">' +
@@ -307,30 +318,57 @@
       '</div>';
     document.body.appendChild(backdrop);
 
-    let newPhoto = "";
-
-    if(data.image){
-      newPhoto = data.image;
+    function renderThumbs(){
+      const wrap = document.getElementById("mThumbs");
+      if(!photos.length){
+        wrap.innerHTML = '<div class="thumb-empty" style="grid-column:1/-1">Нет загруженных фото. Можно добавить несколько — они будут показаны галереей.</div>';
+        return;
+      }
+      wrap.innerHTML = photos.map(function(p, i){
+        return '<div class="thumb-item">' +
+          '<img src="' + p + '" alt="">' +
+          (photos.length > 1 ? '<span class="thumb-count">' + (i+1) + '/' + photos.length + '</span>' : '') +
+          '<button type="button" class="thumb-del" data-i="' + i + '" title="Удалить">' + CV.icon("x") + '</button>' +
+        '</div>';
+      }).join("");
+      wrap.querySelectorAll(".thumb-del").forEach(function(b){
+        b.addEventListener("click", function(){
+          const i = parseInt(b.dataset.i, 10);
+          photos.splice(i, 1);
+          renderThumbs();
+        });
+      });
+      document.getElementById("mPhotoLabel").textContent = photos.length ? "Добавить ещё фото" : "Добавить фото — можно выбрать несколько";
     }
 
     document.getElementById("mPhoto").addEventListener("change", function(e){
-      const file = e.target.files && e.target.files[0];
-      if(!file) return;
-      if(file.size > 4 * 1024 * 1024){
-        CV.toast("Файл больше 4 МБ");
-        return;
-      }
-      document.getElementById("mFileName").textContent = file.name;
-      document.getElementById("mPhotoLabel").textContent = "Фото выбрано";
-      const reader = new FileReader();
-      reader.onload = function(ev){
-        newPhoto = ev.target.result;
-        const prev = document.getElementById("mPreview");
-        prev.style.display = "block";
-        prev.innerHTML = '<img src="' + newPhoto + '" alt="">';
-      };
-      reader.readAsDataURL(file);
+      const files = Array.prototype.slice.call(e.target.files);
+      if(!files.length) return;
+      let pending = files.length;
+      let added = 0;
+      files.forEach(function(file){
+        if(file.size > 4 * 1024 * 1024){
+          CV.toast("Файл " + file.name + " больше 4 МБ, пропущен");
+          pending--;
+          if(pending === 0){ renderThumbs(); if(added>0) CV.toast("Добавлено фото: " + added); }
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(ev){
+          photos.push(ev.target.result);
+          added++;
+          pending--;
+          if(pending === 0){
+            renderThumbs();
+            CV.toast("Добавлено фото: " + added);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+      e.target.value = "";
     });
+
+    renderThumbs();
 
     function close(){
       backdrop.classList.remove("open");
@@ -372,7 +410,8 @@
             raids[i].location = location;
             raids[i].description = description;
             raids[i].tags = tags;
-            raids[i].image = newPhoto;
+            raids[i].images = photos;
+            delete raids[i].image;
             if(type === "past"){
               raids[i].participants = people;
               raids[i].bags = bags;
@@ -390,7 +429,7 @@
           location: location,
           description: description,
           tags: tags,
-          image: newPhoto,
+          images: photos,
           participants: people,
           bags: bags
         });

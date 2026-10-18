@@ -17,9 +17,15 @@
     const badge = isUpcoming
       ? '<span class="card-badge upcoming">' + CV.icon("clock") + 'Будет</span>'
       : '<span class="card-badge">' + CV.icon("check") + 'Проведён</span>';
-    const imgBlock = r.image
-      ? '<img src="' + r.image + '" alt="' + CV.escapeHtml(r.title) + '">'
-      : '<div class="placeholder">' + CV.icon("image") + '</div>';
+    const imgBlock = r.images && r.images.length
+      ? '<img src="' + r.images[0] + '" alt="' + CV.escapeHtml(r.title) + '">'
+      : (r.image
+        ? '<img src="' + r.image + '" alt="' + CV.escapeHtml(r.title) + '">'
+        : '<div class="placeholder">' + CV.icon("image") + '</div>');
+    const photoCount = (r.images && r.images.length) || (r.image ? 1 : 0);
+    const photoBadge = photoCount > 1
+      ? '<span class="photo-badge">' + CV.icon("camera") + photoCount + '</span>'
+      : '';
     const tags = (r.tags || []).map(function(t){
       return '<span class="tag">' + CV.escapeHtml(t) + '</span>';
     }).join("");
@@ -33,7 +39,7 @@
       if(r.bags) extra.push('<span class="tag" style="background:var(--green-50)">' + CV.icon("bag") + ' ' + r.bags + ' мешков</span>');
     }
     return '<article class="card">' +
-      '<div class="card-img">' + badge + imgBlock + '</div>' +
+      '<div class="card-img">' + badge + photoBadge + imgBlock + '</div>' +
       '<div class="card-body">' +
         '<h3>' + CV.escapeHtml(r.title) + '</h3>' +
         '<div class="card-meta">' + meta.join("") + '</div>' +
