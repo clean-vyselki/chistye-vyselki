@@ -429,27 +429,33 @@
       saveBtn.disabled = true;
       saveBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:cvSpin .8s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Сохранение...';
 
-      const uploadNewPhotos = function(){
+      const uploadNewPhotosSequentially = function(){
         const newlyUploadedUrls = [];
-        const uploadTasks = photos.map(function(p, idx){
-          if(p.indexOf("data:") === 0){
-            return CV.resizeImage(photoFiles[idx], 1400, 0.82)
-              .then(function(resized){
-                const fname = "raid-" + Date.now() + "-" + idx + "-" + Math.random().toString(36).slice(2,8) + ".jpg";
-                return CV.uploadPhotoRemote(resized.base64, fname);
-              })
-              .then(function(url){
-                newlyUploadedUrls.push(url);
-                return { idx: idx, url: url };
-              });
-          }
-          return Promise.resolve({ idx: idx, url: p });
+        const finalUrls = [];
+        let chain = Promise.resolve();
+        photos.forEach(function(p, idx){
+          chain = chain.then(function(){
+            if(p.indexOf("data:") === 0){
+              return CV.resizeImage(photoFiles[idx], 1400, 0.82)
+                .then(function(resized){
+                  const fname = "raid-" + Date.now() + "-" + idx + "-" + Math.random().toString(36).slice(2,10) + ".jpg";
+                  return CV.uploadPhotoRemote(resized.base64, fname);
+                })
+                .then(function(url){
+                  newlyUploadedUrls.push(url);
+                  finalUrls[idx] = url;
+                })
+                .catch(function(err){
+                  throw new Error("Фото " + (idx+1) + ": " + err.message);
+                });
+            }else{
+              finalUrls[idx] = p;
+            }
+          });
         });
-        const p = Promise.all(uploadTasks).then(function(results){
-          return results.sort(function(a,b){ return a.idx - b.idx; }).map(function(r){ return r.url; });
-        });
-        p._uploaded = newlyUploadedUrls;
-        return p;
+        const result = chain.then(function(){ return finalUrls.slice(); });
+        result._uploaded = newlyUploadedUrls;
+        return result;
       };
 
       const rollbackPhotos = function(urls){
@@ -482,7 +488,7 @@
                 }
               }
               if(!found){
-                throw new Error("Рейд не найден — возможно, он был удалён. Обновите страницу.");
+                throw new Error("Рейд не найден — обновите страницу");
               }
             }else{
               freshRaids.push({
@@ -503,9 +509,9 @@
           });
       };
 
-      uploadNewPhotos()
+      uploadNewPhotosSequentially()
         .then(function(finalUrls){
-          const uploadedForRollback = uploadNewPhotos._uploaded || [];
+          const uploadedForRollback = uploadNewPhotosSequentially._uploaded || [];
           return saveRaidWithMerge(finalUrls)
             .catch(function(err){
               return rollbackPhotos(uploadedForRollback).then(function(){ throw err; });

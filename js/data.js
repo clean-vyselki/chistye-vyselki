@@ -110,37 +110,51 @@ CV.saveRaids = function(raids){ CV.localSet(CV.STORAGE_KEYS.raids, raids); };
 CV.loadComplaints = function(){ return CV.loadComplaintsCached(); };
 CV.saveComplaints = function(complaints){ CV.localSet(CV.STORAGE_KEYS.complaints, complaints); };
 
+CV._shaCache = {};
+
 CV.fetchRaids = function(){
-  return fetch(CV.rawBase("data/raids.json"), {cache:"no-store"})
-    .then(function(r){
-      if(!r.ok) throw new Error("HTTP " + r.status);
-      return r.json();
-    })
-    .then(function(raids){
-      CV.localSet(CV.STORAGE_KEYS.raids, raids);
-      return raids;
-    })
-    .catch(function(err){
-      return CV.loadRaidsCached();
-    });
+  const url = CV.apiBase("data/raids.json") + "?ref=" + CV.GITHUB.branch + "&t=" + Date.now();
+  return fetch(url, {
+    headers: { "Authorization": "Bearer " + CV.GITHUB.token, "Accept": "application/vnd.github+json" }
+  })
+  .then(function(r){
+    if(!r.ok) throw new Error("HTTP " + r.status);
+    return r.json();
+  })
+  .then(function(data){
+    if(data && data.sha) CV._shaCache["data/raids.json"] = data.sha;
+    if(!data || !data.content) return CV.loadRaidsCached();
+    const content = CV.b64decode(data.content);
+    const raids = JSON.parse(content);
+    CV.localSet(CV.STORAGE_KEYS.raids, raids);
+    return raids;
+  })
+  .catch(function(){
+    return CV.loadRaidsCached();
+  });
 };
 
 CV.fetchComplaints = function(){
-  return fetch(CV.rawBase("data/complaints.json"), {cache:"no-store"})
-    .then(function(r){
-      if(!r.ok) throw new Error("HTTP " + r.status);
-      return r.json();
-    })
-    .then(function(complaints){
-      CV.localSet(CV.STORAGE_KEYS.complaints, complaints);
-      return complaints;
-    })
-    .catch(function(){
-      return CV.loadComplaintsCached();
-    });
+  const url = CV.apiBase("data/complaints.json") + "?ref=" + CV.GITHUB.branch + "&t=" + Date.now();
+  return fetch(url, {
+    headers: { "Authorization": "Bearer " + CV.GITHUB.token, "Accept": "application/vnd.github+json" }
+  })
+  .then(function(r){
+    if(!r.ok) throw new Error("HTTP " + r.status);
+    return r.json();
+  })
+  .then(function(data){
+    if(data && data.sha) CV._shaCache["data/complaints.json"] = data.sha;
+    if(!data || !data.content) return CV.loadComplaintsCached();
+    const content = CV.b64decode(data.content);
+    const complaints = JSON.parse(content);
+    CV.localSet(CV.STORAGE_KEYS.complaints, complaints);
+    return complaints;
+  })
+  .catch(function(){
+    return CV.loadComplaintsCached();
+  });
 };
-
-CV._shaCache = {};
 
 CV.apiGetSha = function(path, forceFresh){
   if(!forceFresh && CV._shaCache[path]) {
