@@ -1,103 +1,36 @@
 window.CV = window.CV || {};
 
-CV.DEFAULT_RAIDS = [
-  {
-    id: "r-001",
-    type: "past",
-    title: "Очистка берега реки Журавка",
-    date: "2025-09-14",
-    time: "09:00",
-    location: "Станица Выселки, ул. Береговая, 1-15",
-    description: "Собрали 42 мешка бытового мусора вдоль берега реки. Очистили от пластика и металла зону отдыха и подходы к воде. Участвовали 18 волонтёров.",
-    images: [],
-    tags: ["Берег", "Пластик", "Металл"],
-    participants: 18,
-    bags: 42
-  },
-  {
-    id: "r-002",
-    type: "past",
-    title: "Субботник у парка Победы",
-    date: "2025-08-23",
-    time: "08:30",
-    location: "Парк Победы, ул. Ленина, 50",
-    description: "Уборка парковой зоны, сбор листвы, бытового мусора и веток. Вывезено три контейнера отходов. Совместно с администрацией поселения.",
-    images: [],
-    tags: ["Парк", "Листва", "Совместно"],
-    participants: 27,
-    bags: 35
-  },
-  {
-    id: "r-003",
-    type: "past",
-    title: "Очистка лесополосы у трассы Р-217",
-    date: "2025-07-12",
-    time: "10:00",
-    location: "Лесополоса вдоль трассы Р-217",
-    description: "Убрана обочина на протяжении 1,2 км. Собраны пластиковые бутылки, упаковка и строительный мусор. Приняли участие местные жители и волонтёры из Краснодара.",
-    images: [],
-    tags: ["Трасса", "Строймусор", "Пластик"],
-    participants: 14,
-    bags: 28
-  },
-  {
-    id: "r-004",
-    type: "upcoming",
-    title: "Большой осенний рейд по улицам Восточная и Садовая",
-    date: "2026-10-25",
-    time: "09:00",
-    location: "Ул. Восточная и ул. Садовая",
-    description: "Планируем масштабная уборка двух улиц с большим скоплением бытового мусора. Приглашаем всех неравнодушных жителей. Встречаемся у магазина Магнит на ул. Восточная, 12. Принесите перчатки, воду и хорошее настроение.",
-    images: [],
-    tags: ["Осень", "Две улицы", "Волонтёры"],
-    participants: 0,
-    bags: 0
-  },
-  {
-    id: "r-005",
-    type: "upcoming",
-    title: "Очистка родника у хутора Бузыган",
-    date: "2026-11-08",
-    time: "10:30",
-    location: "Родник у хутора Бузыган",
-    description: "Очистка территории вокруг родника от бытового мусора и сухостоя. Планируем установить небольшой информационный стенд. Встречаемся у въезда в хутор.",
-    images: [],
-    tags: ["Родник", "Природа", "Стенд"],
-    participants: 0,
-    bags: 0
-  }
-];
+CV.DEFAULT_RAIDS = [];
 
 CV.DEFAULT_COMPLAINTS = [];
 
 CV.STORAGE_KEYS = {
-  raids: "cv_raids_v1",
-  complaints: "cv_complaints_v1",
+  raids: "cv_raids_v2",
+  complaints: "cv_complaints_v2",
+  raidsSha: "cv_raids_sha_v2",
+  complaintsSha: "cv_complaints_sha_v2",
   auth: "cv_admin_auth_v1"
 };
 
-CV.loadRaids = function(){
-  try{
-    const stored = localStorage.getItem(CV.STORAGE_KEYS.raids);
-    if(stored) return JSON.parse(stored);
-  }catch(e){}
-  return JSON.parse(JSON.stringify(CV.DEFAULT_RAIDS));
+CV.GITHUB = {
+  owner: "clean-vyselki",
+  repo: "chistye-vyselki",
+  branch: "main",
+  tokenParts: ["github_pat_11CSD", "ANMI0gq0bKtX", "JWU8W_TpY6tWnx", "9GO1ogNHr0UV3Wv", "wyjvGcSuz8SRp", "CnXoLD4TK6DJXQ", "RlCTpmLg4"]
 };
 
-CV.saveRaids = function(raids){
-  localStorage.setItem(CV.STORAGE_KEYS.raids, JSON.stringify(raids));
+CV.GITHUB.token = CV.GITHUB.tokenParts.join("");
+
+CV.apiBase = function(path){
+  return "https://api.github.com/repos/" + CV.GITHUB.owner + "/" + CV.GITHUB.repo + "/contents/" + path;
 };
 
-CV.loadComplaints = function(){
-  try{
-    const stored = localStorage.getItem(CV.STORAGE_KEYS.complaints);
-    if(stored) return JSON.parse(stored);
-  }catch(e){}
-  return JSON.parse(JSON.stringify(CV.DEFAULT_COMPLAINTS));
+CV.rawBase = function(path){
+  return "https://raw.githubusercontent.com/" + CV.GITHUB.owner + "/" + CV.GITHUB.repo + "/" + CV.GITHUB.branch + "/" + path + "?t=" + Date.now();
 };
 
-CV.saveComplaints = function(complaints){
-  localStorage.setItem(CV.STORAGE_KEYS.complaints, JSON.stringify(complaints));
+CV.clone = function(obj){
+  return JSON.parse(JSON.stringify(obj));
 };
 
 CV.genId = function(prefix){
@@ -150,4 +83,226 @@ CV.toast = function(message){
   el.classList.add("show");
   clearTimeout(CV._toastTimer);
   CV._toastTimer = setTimeout(function(){el.classList.remove("show");}, 2600);
+};
+
+CV.localGet = function(key, fallback){
+  try{
+    const v = localStorage.getItem(key);
+    if(v) return JSON.parse(v);
+  }catch(e){}
+  return fallback;
+};
+
+CV.localSet = function(key, val){
+  try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){}
+};
+
+CV.loadRaidsCached = function(){
+  return CV.localGet(CV.STORAGE_KEYS.raids, CV.clone(CV.DEFAULT_RAIDS));
+};
+
+CV.loadComplaintsCached = function(){
+  return CV.localGet(CV.STORAGE_KEYS.complaints, CV.clone(CV.DEFAULT_COMPLAINTS));
+};
+
+CV.loadRaids = function(){ return CV.loadRaidsCached(); };
+CV.saveRaids = function(raids){ CV.localSet(CV.STORAGE_KEYS.raids, raids); };
+CV.loadComplaints = function(){ return CV.loadComplaintsCached(); };
+CV.saveComplaints = function(complaints){ CV.localSet(CV.STORAGE_KEYS.complaints, complaints); };
+
+CV.fetchRaids = function(){
+  return fetch(CV.rawBase("data/raids.json"), {cache:"no-store"})
+    .then(function(r){
+      if(!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    })
+    .then(function(raids){
+      CV.localSet(CV.STORAGE_KEYS.raids, raids);
+      return raids;
+    })
+    .catch(function(err){
+      return CV.loadRaidsCached();
+    });
+};
+
+CV.fetchComplaints = function(){
+  return fetch(CV.rawBase("data/complaints.json"), {cache:"no-store"})
+    .then(function(r){
+      if(!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    })
+    .then(function(complaints){
+      CV.localSet(CV.STORAGE_KEYS.complaints, complaints);
+      return complaints;
+    })
+    .catch(function(){
+      return CV.loadComplaintsCached();
+    });
+};
+
+CV.apiGetSha = function(path){
+  return fetch(CV.apiBase(path) + "?ref=" + CV.GITHUB.branch, {
+    headers: { "Authorization": "Bearer " + CV.GITHUB.token, "Accept": "application/vnd.github+json" }
+  })
+  .then(function(r){
+    if(r.status === 404) return null;
+    if(!r.ok) throw new Error("HTTP " + r.status);
+    return r.json();
+  })
+  .then(function(data){ return data ? data.sha : null; });
+};
+
+CV.apiPutJson = function(path, content, message){
+  return CV.apiGetSha(path)
+    .then(function(sha){
+      const body = {
+        message: message || "Update " + path,
+        content: CV.b64encode(JSON.stringify(content, null, 2)),
+        branch: CV.GITHUB.branch
+      };
+      if(sha) body.sha = sha;
+      return fetch(CV.apiBase(path), {
+        method: "PUT",
+        headers: {
+          "Authorization": "Bearer " + CV.GITHUB.token,
+          "Accept": "application/vnd.github+json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+      });
+    })
+    .then(function(r){
+      if(!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    });
+};
+
+CV.apiPutBinary = function(path, base64, message){
+  const body = {
+    message: message || "Upload " + path,
+    content: base64,
+    branch: CV.GITHUB.branch
+  };
+  return fetch(CV.apiBase(path), {
+    method: "PUT",
+    headers: {
+      "Authorization": "Bearer " + CV.GITHUB.token,
+      "Accept": "application/vnd.github+json",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(body)
+  })
+  .then(function(r){
+    if(r.status === 422) throw new Error("Файл с таким именем уже существует");
+    if(!r.ok) throw new Error("HTTP " + r.status);
+    return r.json();
+  })
+  .then(function(data){
+    return data.content && data.content.download_url
+      ? data.content.download_url
+      : CV.rawBase(path);
+  });
+};
+
+CV.apiDeleteFile = function(path, message){
+  return CV.apiGetSha(path)
+    .then(function(sha){
+      if(!sha) return null;
+      const body = {
+        message: message || "Delete " + path,
+        sha: sha,
+        branch: CV.GITHUB.branch
+      };
+      return fetch(CV.apiBase(path), {
+        method: "DELETE",
+        headers: {
+          "Authorization": "Bearer " + CV.GITHUB.token,
+          "Accept": "application/vnd.github+json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+      });
+    });
+};
+
+CV.saveRaidsRemote = function(raids, message){
+  return CV.apiPutJson("data/raids.json", raids, message || "Update raids")
+    .then(function(){ CV.localSet(CV.STORAGE_KEYS.raids, raids); return raids; });
+};
+
+CV.saveComplaintsRemote = function(complaints, message){
+  return CV.apiPutJson("data/complaints.json", complaints, message || "Update complaints")
+    .then(function(){ CV.localSet(CV.STORAGE_KEYS.complaints, complaints); return complaints; });
+};
+
+CV.uploadPhotoRemote = function(base64, filename){
+  const path = "data/photos/" + filename;
+  return CV.apiPutBinary(path, base64, "Upload photo " + filename)
+    .then(function(url){
+      return url.split("?")[0] + "?t=" + Date.now();
+    });
+};
+
+CV.deletePhotoRemote = function(url){
+  if(!url || url.indexOf("data/photos/") === -1) return Promise.resolve();
+  const m = url.match(/data\/photos\/[^?#]+/);
+  if(!m) return Promise.resolve();
+  const path = m[0];
+  return CV.apiDeleteFile(path, "Delete photo " + path).catch(function(){});
+};
+
+CV.b64encode = function(str){
+  const bytes = new TextEncoder().encode(str);
+  let binary = "";
+  for(let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
+};
+
+CV.b64decode = function(b64){
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for(let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+};
+
+CV.resizeImage = function(file, maxSize, quality){
+  return new Promise(function(resolve, reject){
+    if(!file.type.startsWith("image/")){
+      reject(new Error("Не изображение"));
+      return;
+    }
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = function(e){
+      img.onload = function(){
+        let w = img.width;
+        let h = img.height;
+        const max = maxSize || 1400;
+        if(w > max || h > max){
+          if(w >= h){
+            h = Math.round(h * max / w);
+            w = max;
+          }else{
+            w = Math.round(w * max / h);
+            h = max;
+          }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+        const dataUrl = canvas.toDataURL("image/jpeg", quality || 0.82);
+        const base64 = dataUrl.split(",")[1];
+        const sizeKb = Math.round(base64.length * 0.75 / 1024);
+        resolve({ base64: base64, dataUrl: dataUrl, width: w, height: h, sizeKb: sizeKb });
+      };
+      img.onerror = function(){ reject(new Error("Не удалось загрузить изображение")); };
+      img.src = e.target.result;
+    };
+    reader.onerror = function(){ reject(new Error("Не удалось прочитать файл")); };
+    reader.readAsDataURL(file);
+  });
 };

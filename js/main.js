@@ -1,7 +1,8 @@
 (function(){
   "use strict";
 
-  const raids = CV.loadRaids();
+  let raids = CV.loadRaidsCached();
+  let activeFilter = "all";
 
   function renderStats(){
     const past = raids.filter(function(r){return r.type === "past";});
@@ -249,7 +250,8 @@
       t.addEventListener("click", function(){
         tabs.forEach(function(x){x.classList.remove("active");});
         t.classList.add("active");
-        renderRaids(t.dataset.filter);
+        activeFilter = t.dataset.filter;
+        renderRaids(activeFilter);
       });
     });
   }
@@ -275,33 +277,49 @@
     const fileName = document.getElementById("cFileName");
     const preview = document.getElementById("cPreview");
     const alertBox = document.getElementById("complaintAlert");
-    let photoData = "";
+    const submitBtn = form.querySelector('button[type="submit"]');
+    let photoFile = null;
+    let photoDataUrl = "";
 
     photo.addEventListener("change", function(){
       const file = photo.files && photo.files[0];
       if(!file){
-        photoData = "";
+        photoFile = null;
+        photoDataUrl = "";
         photoLabel.textContent = "Нажмите, чтобы прикрепить фото";
         fileName.textContent = "";
         preview.style.display = "none";
         preview.innerHTML = "";
         return;
       }
-      if(file.size > 4 * 1024 * 1024){
-        alertBox.innerHTML = '<div class="alert alert-error">' + CV.icon("alert") + '<div>Файл слишком большой. Максимум 4 МБ.</div></div>';
+      if(file.size > 10 * 1024 * 1024){
+        alertBox.innerHTML = '<div class="alert alert-error">' + CV.icon("alert") + '<div>Файл слишком большой. Максимум 10 МБ.</div></div>';
         photo.value = "";
         return;
       }
+      photoFile = file;
       fileName.textContent = file.name;
       photoLabel.textContent = "Фото выбрано";
       const reader = new FileReader();
       reader.onload = function(e){
-        photoData = e.target.result;
+        photoDataUrl = e.target.result;
         preview.style.display = "block";
-        preview.innerHTML = '<img src="' + photoData + '" alt="превью">';
+        preview.innerHTML = '<img src="' + photoDataUrl + '" alt="превью">';
       };
       reader.readAsDataURL(file);
     });
+
+    function setSubmitLoading(loading){
+      if(!submitBtn) return;
+      if(loading){
+        submitBtn.disabled = true;
+        submitBtn.dataset.originalHtml = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:cvSpin .8s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Отправка...';
+      }else{
+        submitBtn.disabled = false;
+        if(submitBtn.dataset.originalHtml) submitBtn.innerHTML = submitBtn.dataset.originalHtml;
+      }
+    }
 
     form.addEventListener("submit", function(e){
       e.preventDefault();
@@ -312,25 +330,58 @@
         alertBox.innerHTML = '<div class="alert alert-error">' + CV.icon("alert") + '<div>Заполните все обязательные поля.</div></div>';
         return;
       }
-      const complaints = CV.loadComplaints();
-      complaints.unshift({
-        id: CV.genId("c"),
-        name: name,
-        address: address,
-        problem: problem,
-        photo: photoData,
-        status: "new",
-        createdAt: new Date().toISOString()
-      });
-      CV.saveComplaints(complaints);
-      form.reset();
-      photoData = "";
-      photoLabel.textContent = "Нажмите, чтобы прикрепить фото";
-      fileName.textContent = "";
-      preview.style.display = "none";
-      preview.innerHTML = "";
-      alertBox.innerHTML = '<div class="alert alert-success">' + CV.icon("check") + '<div>Спасибо! Жалоба отправлена. Мы рассмотрим её и добавим место в план рейдов.</div></div>';
-      CV.toast("Жалоба отправлена");
+
+      setSubmitLoading(true);
+      alertBox.innerHTML = "";
+
+      const submitComplaint = function(photoUrl){
+        const complaint = {
+          id: CV.genId("c"),
+          name: name,
+          address: address,
+          problem: problem,
+          photo: photoUrl || "",
+          status: "new",
+          createdAt: new Date().toISOString()
+        };
+        return CV.fetchComplaints().then(function(complaints){
+          complaints.unshift(complaint);
+          return CV.saveComplaintsRemote(complaints, "New complaint from " + name);
+        });
+      };
+
+      let uploadChain;
+      if(photoFile){
+        const photoName = "c-" + Date.now() + "-" + Math.random().toString(36).slice(2,8) + ".jpg";
+        uploadChain = CV.resizeImage(photoFile, 1400, 0.82)
+          .then(function(resized){
+            return CV.uploadPhotoRemote(resized.base64, photoName);
+          })
+          .then(function(url){ return url; })
+          .catch(function(err){
+            throw new Error("Не удалось загрузить фото: " + err.message);
+          });
+      }else{
+        uploadChain = Promise.resolve("");
+      }
+
+      uploadChain
+        .then(function(photoUrl){ return submitComplaint(photoUrl); })
+        .then(function(){
+          form.reset();
+          photoFile = null;
+          photoDataUrl = "";
+          photoLabel.textContent = "Нажмите, чтобы прикрепить фото";
+          fileName.textContent = "";
+          preview.style.display = "none";
+          preview.innerHTML = "";
+          alertBox.innerHTML = '<div class="alert alert-success">' + CV.icon("check") + '<div>Спасибо! Жалоба отправлена. Мы рассмотрим её и добавим место в план рейдов.</div></div>';
+          CV.toast("Жалоба отправлена");
+        })
+        .catch(function(err){
+          alertBox.innerHTML = '<div class="alert alert-error">' + CV.icon("alert") + '<div>Не удалось отправить жалобу: ' + CV.escapeHtml(err.message) + '. Попробуйте позже.</div></div>';
+        })
+        .then(function(){ setSubmitLoading(false); });
     });
   }
 
@@ -363,6 +414,15 @@
     test.src = "logo.png";
   }
 
+  function refreshFromRemote(){
+    CV.fetchRaids().then(function(freshRaids){
+      raids = freshRaids;
+      renderStats();
+      renderRaids(activeFilter);
+      renderUpcoming();
+    }).catch(function(){});
+  }
+
   document.addEventListener("DOMContentLoaded", function(){
     renderStats();
     renderRaids("all");
@@ -373,5 +433,6 @@
     setupFab();
     setupYear();
     setupLogoCheck();
+    refreshFromRemote();
   });
 })();

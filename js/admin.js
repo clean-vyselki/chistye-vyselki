@@ -58,9 +58,23 @@
     });
 
     renderPanel("dashboard");
+    syncFromRemote();
+  }
+
+  let currentPanel = "dashboard";
+
+  function syncFromRemote(){
+    Promise.all([CV.fetchRaids(), CV.fetchComplaints()])
+      .then(function(){
+        if(adminApp.style.display === "block"){
+          renderPanel(currentPanel);
+        }
+      })
+      .catch(function(){});
   }
 
   function renderPanel(name){
+    currentPanel = name;
     if(name === "dashboard") renderDashboard();
     else if(name === "raids") renderRaidsPanel();
     else if(name === "upcoming") renderUpcomingPanel();
@@ -262,6 +276,7 @@
       bags: 0
     };
     let photos = [];
+    let photoFiles = [];
     if(data.images && data.images.length) photos = data.images.slice();
     else if(data.image) photos = [data.image];
 
@@ -335,6 +350,7 @@
         b.addEventListener("click", function(){
           const i = parseInt(b.dataset.i, 10);
           photos.splice(i, 1);
+          photoFiles.splice(i, 1);
           renderThumbs();
         });
       });
@@ -347,8 +363,8 @@
       let pending = files.length;
       let added = 0;
       files.forEach(function(file){
-        if(file.size > 4 * 1024 * 1024){
-          CV.toast("Файл " + file.name + " больше 4 МБ, пропущен");
+        if(file.size > 15 * 1024 * 1024){
+          CV.toast("Файл " + file.name + " больше 15 МБ, пропущен");
           pending--;
           if(pending === 0){ renderThumbs(); if(added>0) CV.toast("Добавлено фото: " + added); }
           return;
@@ -356,6 +372,7 @@
         const reader = new FileReader();
         reader.onload = function(ev){
           photos.push(ev.target.result);
+          photoFiles.push(file);
           added++;
           pending--;
           if(pending === 0){
@@ -400,55 +417,98 @@
         return;
       }
 
-      const raids = CV.loadRaids();
-      if(isEdit){
-        for(let i = 0; i < raids.length; i++){
-          if(raids[i].id === id){
-            raids[i].title = title;
-            raids[i].date = date;
-            raids[i].time = time;
-            raids[i].location = location;
-            raids[i].description = description;
-            raids[i].tags = tags;
-            raids[i].images = photos;
-            delete raids[i].image;
-            if(type === "past"){
-              raids[i].participants = people;
-              raids[i].bags = bags;
-            }
-            break;
+      const saveBtn = document.getElementById("mSave");
+      const originalHtml = saveBtn.innerHTML;
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:cvSpin .8s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Сохранение...';
+
+      const uploadNewPhotos = function(){
+        const uploadTasks = photos.map(function(p, idx){
+          if(p.indexOf("data:") === 0){
+            return CV.resizeImage(photoFiles[idx], 1400, 0.82)
+              .then(function(resized){
+                const fname = "raid-" + Date.now() + "-" + idx + "-" + Math.random().toString(36).slice(2,6) + ".jpg";
+                return CV.uploadPhotoRemote(resized.base64, fname);
+              })
+              .then(function(url){ return { idx: idx, url: url }; });
           }
-        }
-      }else{
-        raids.push({
-          id: CV.genId("r"),
-          type: type,
-          title: title,
-          date: date,
-          time: time,
-          location: location,
-          description: description,
-          tags: tags,
-          images: photos,
-          participants: people,
-          bags: bags
+          return Promise.resolve({ idx: idx, url: p });
         });
-      }
-      CV.saveRaids(raids);
-      close();
-      CV.toast(isEdit ? "Рейд обновлён" : "Рейд добавлен");
-      renderPanel(type === "past" ? "raids" : "upcoming");
+        return Promise.all(uploadTasks).then(function(results){
+          return results.sort(function(a,b){ return a.idx - b.idx; }).map(function(r){ return r.url; });
+        });
+      };
+
+      uploadNewPhotos()
+        .then(function(finalUrls){
+          const raids = CV.loadRaids();
+          if(isEdit){
+            for(let i = 0; i < raids.length; i++){
+              if(raids[i].id === id){
+                raids[i].title = title;
+                raids[i].date = date;
+                raids[i].time = time;
+                raids[i].location = location;
+                raids[i].description = description;
+                raids[i].tags = tags;
+                raids[i].images = finalUrls;
+                delete raids[i].image;
+                if(type === "past"){
+                  raids[i].participants = people;
+                  raids[i].bags = bags;
+                }
+                break;
+              }
+            }
+          }else{
+            raids.push({
+              id: CV.genId("r"),
+              type: type,
+              title: title,
+              date: date,
+              time: time,
+              location: location,
+              description: description,
+              tags: tags,
+              images: finalUrls,
+              participants: people,
+              bags: bags
+            });
+          }
+          return CV.saveRaidsRemote(raids, (isEdit ? "Update raid " : "Add raid ") + title);
+        })
+        .then(function(){
+          close();
+          CV.toast(isEdit ? "Рейд обновлён" : "Рейд добавлен");
+          renderPanel(type === "past" ? "raids" : "upcoming");
+        })
+        .catch(function(err){
+          CV.toast("Ошибка: " + err.message);
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = originalHtml;
+        });
     });
   }
 
   function deleteRaid(id){
     if(!confirm("Удалить этот рейд? Действие нельзя отменить.")) return;
     let raids = CV.loadRaids();
+    const raid = raids.filter(function(r){return r.id === id;})[0];
     raids = raids.filter(function(r){return r.id !== id;});
-    CV.saveRaids(raids);
-    CV.toast("Рейд удалён");
-    const activePanel = document.querySelector(".admin-nav-item.active").dataset.panel;
-    renderPanel(activePanel);
+    CV.toast("Удаляю...");
+    const deletePhotos = raid && raid.images && raid.images.length
+      ? Promise.all(raid.images.map(function(url){ return CV.deletePhotoRemote(url); }))
+      : Promise.resolve();
+    deletePhotos
+      .then(function(){ return CV.saveRaidsRemote(raids, "Delete raid " + (raid ? raid.title : id)); })
+      .then(function(){
+        CV.toast("Рейд удалён");
+        const activePanel = document.querySelector(".admin-nav-item.active").dataset.panel;
+        renderPanel(activePanel);
+      })
+      .catch(function(err){
+        CV.toast("Ошибка удаления: " + err.message);
+      });
   }
 
   function renderComplaintsPanel(){
@@ -535,9 +595,13 @@
     document.getElementById("cFilter").addEventListener("change", draw);
     document.getElementById("clearComplaints").addEventListener("click", function(){
       if(!confirm("Удалить ВСЕ жалобы? Это действие нельзя отменить.")) return;
-      CV.saveComplaints([]);
-      CV.toast("Все жалобы удалены");
-      draw();
+      CV.toast("Удаляю...");
+      CV.saveComplaintsRemote([], "Clear all complaints")
+        .then(function(){
+          CV.toast("Все жалобы удалены");
+          draw();
+        })
+        .catch(function(err){ CV.toast("Ошибка: " + err.message); });
     });
     draw();
   }
@@ -547,17 +611,29 @@
     for(let i = 0; i < list.length; i++){
       if(list[i].id === id){list[i].status = status; break;}
     }
-    CV.saveComplaints(list);
-    CV.toast("Статус обновлён");
-    renderPanel("complaints");
+    CV.saveComplaintsRemote(list, "Set complaint " + id + " status to " + status)
+      .then(function(){
+        CV.toast("Статус обновлён");
+        renderPanel("complaints");
+      })
+      .catch(function(err){ CV.toast("Ошибка: " + err.message); });
   }
 
   function deleteComplaint(id){
     let list = CV.loadComplaints();
+    const complaint = list.filter(function(c){return c.id === id;})[0];
     list = list.filter(function(c){return c.id !== id;});
-    CV.saveComplaints(list);
-    CV.toast("Жалоба удалена");
-    renderPanel("complaints");
+    CV.toast("Удаляю...");
+    const delPhoto = complaint && complaint.photo
+      ? CV.deletePhotoRemote(complaint.photo)
+      : Promise.resolve();
+    delPhoto
+      .then(function(){ return CV.saveComplaintsRemote(list, "Delete complaint " + id); })
+      .then(function(){
+        CV.toast("Жалоба удалена");
+        renderPanel("complaints");
+      })
+      .catch(function(err){ CV.toast("Ошибка: " + err.message); });
   }
 
   function renderExportPanel(){
@@ -591,8 +667,8 @@
         '</div></div>' +
       '</div>' +
       '<div class="card" style="margin-top:20px"><div class="card-body">' +
-        '<h3 style="margin:0 0 8px">Как опубликовать рейды на сайте</h3>' +
-        '<p class="card-desc" style="margin:0">1. Добавьте рейды через админ-панель.<br>2. Нажмите «Скачать raids.json».<br>3. Откройте скачанный файл, скопируйте содержимое в файл <code>js/data.js</code> (вместо <code>CV.DEFAULT_RAIDS = [...]</code>).<br>4. Сделайте commit и push в репозиторий GitHub. Через минуту рейды появятся у всех посетителей.</p>' +
+        '<h3 style="margin:0 0 8px">Данные хранятся онлайн</h3>' +
+        '<p class="card-desc" style="margin:0">Все рейды, фото и жалобы сохраняются прямо в репозиторий GitHub через API. Любое изменение в админ-панели сразу видно всем посетителям сайта — никаких отдельных коммитов делать не нужно.</p>' +
       '</div></div>';
 
     document.getElementById("exportRaidsBtn").addEventListener("click", function(){
@@ -610,9 +686,13 @@
         try{
           const data = JSON.parse(e.target.result);
           if(!Array.isArray(data)) throw new Error("not array");
-          CV.saveRaids(data);
-          CV.toast("Импортировано рейдов: " + data.length);
-          renderPanel("export");
+          CV.toast("Импортирую...");
+          CV.saveRaidsRemote(data, "Import raids from JSON file")
+            .then(function(){
+              CV.toast("Импортировано рейдов: " + data.length);
+              renderPanel("export");
+            })
+            .catch(function(err){ CV.toast("Ошибка: " + err.message); });
         }catch(err){
           CV.toast("Ошибка: неверный формат");
         }
@@ -621,10 +701,16 @@
     });
     document.getElementById("resetBtn").addEventListener("click", function(){
       if(!confirm("Сбросить все данные к демо?")) return;
-      localStorage.removeItem(CV.STORAGE_KEYS.raids);
-      localStorage.removeItem(CV.STORAGE_KEYS.complaints);
-      CV.toast("Данные сброшены");
-      renderPanel("export");
+      CV.toast("Сбрасываю...");
+      Promise.all([
+        CV.saveRaidsRemote(CV.clone(CV.DEFAULT_RAIDS), "Reset raids to default"),
+        CV.saveComplaintsRemote([], "Reset complaints to default")
+      ])
+        .then(function(){
+          CV.toast("Данные сброшены");
+          renderPanel("export");
+        })
+        .catch(function(err){ CV.toast("Ошибка: " + err.message); });
     });
   }
 

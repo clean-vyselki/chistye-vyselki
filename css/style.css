@@ -504,3 +504,17 @@ button{font-family:inherit;cursor:pointer}
 }
 
 .gallery-trigger{cursor:pointer}
+
+@keyframes cvSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.loading-state{ position: relative; pointer-events: none; }
+.btn[disabled]{ opacity:.7; cursor:not-allowed; }
+.btn[disabled] svg{ animation: cvSpin .8s linear infinite; }
+.spin{ animation: cvSpin .8s linear infinite; display:inline-block; }
+
+.banner{
+  background:linear-gradient(90deg, var(--green-700), var(--green-600));
+  color:#fff; padding:10px 16px; border-radius:8px; font-size:13px;
+  display:flex; align-items:center; gap:10px; margin-bottom:16px;
+}
+.banner svg{ width:18px;height:18px; flex-shrink:0; }
+.banner.warning{ background:linear-gradient(90deg, #b8540f, #d97706); }
