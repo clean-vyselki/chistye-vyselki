@@ -1,1 +1,24 @@
-[]
+[
+  {
+    "id": "r-mvdy7few-4gr4v",
+    "type": "past",
+    "title": "Очистка Набережной - ул. Ленина",
+    "date": "2026-10-16",
+    "time": "15:30",
+    "location": "Набережная - ул. Ленина",
+    "description": "Итак, мы подводим итоги нашего первого рейда по уборке мусора на набережной и в её районе на улице Ленина. 🌱\n\nНам удалось собрать полный мусорный пакет! При этом были и интересные находки, например: обломанный бампер от автомобиля! Было собрано около 5 килограмм мусора. Спасибо всем присутствующим и инициаторам!\nАвторы идеи: Степаненко Димитрий, Крюков Сергей.\nВ сборе мусора принимали участие: Балиев Тимур, Крюков Сергей, Федотов Роман.\nИнициаторами стали те же 3 человека, которые и присутствовали на сборе.",
+    "tags": [
+      "Набережная",
+      "Пластик",
+      "Чистота"
+    ],
+    "images": [
+      "https://raw.githubusercontent.com/clean-vyselki/chistye-vyselki/main/data/photos/raid-1792335368136-0-hv3fve23.jpg?t=1792335370288",
+      "https://raw.githubusercontent.com/clean-vyselki/chistye-vyselki/main/data/photos/raid-1792335370379-1-2k19yqaj.jpg?t=1792335372100",
+      "https://raw.githubusercontent.com/clean-vyselki/chistye-vyselki/main/data/photos/raid-1792335372195-2-vorpr8b0.jpg?t=1792335374092",
+      "https://raw.githubusercontent.com/clean-vyselki/chistye-vyselki/main/data/photos/raid-1792335374172-3-hqvmxg03.jpg?t=1792335375827"
+    ],
+    "participants": 3,
+    "bags": 1
+  }
+]
