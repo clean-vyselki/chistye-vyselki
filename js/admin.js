@@ -601,7 +601,20 @@
     URL.revokeObjectURL(url);
   }
 
+  function setupLogoCheck(){
+    const slots = document.querySelectorAll(".brand-logo");
+    if(!slots.length) return;
+    const test = new Image();
+    test.onload = function(){
+      slots.forEach(function(slot){
+        slot.innerHTML = '<img src="../logo.png" alt="Логотип Чистые Выселки">';
+      });
+    };
+    test.src = "../logo.png";
+  }
+
   function init(){
+    setupLogoCheck();
     const loginForm = document.getElementById("loginForm");
     const loginAlert = document.getElementById("loginAlert");
 
