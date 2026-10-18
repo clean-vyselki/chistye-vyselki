@@ -67,10 +67,14 @@
     else if(filter === "upcoming") list = list.filter(function(r){return r.type === "upcoming";});
 
     if(!list.length){
+      const isAll = filter === "all";
+      const msg = isAll
+        ? "Пока нет рейдов. Как только админ добавит первый — он появится здесь."
+        : (filter === "past" ? "Пока нет прошедших рейдов." : "Пока нет будущих рейдов.");
       grid.innerHTML = '<div class="empty" style="grid-column:1/-1">' +
-        CV.icon("inbox") +
+        CV.icon("sprout") +
         '<h3>Пока пусто</h3>' +
-        '<p>В этой категории ещё нет записей.</p>' +
+        '<p>' + msg + '</p>' +
       '</div>';
       return;
     }

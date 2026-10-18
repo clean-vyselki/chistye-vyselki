@@ -140,8 +140,14 @@ CV.fetchComplaints = function(){
     });
 };
 
-CV.apiGetSha = function(path){
-  return fetch(CV.apiBase(path) + "?ref=" + CV.GITHUB.branch, {
+CV._shaCache = {};
+
+CV.apiGetSha = function(path, forceFresh){
+  if(!forceFresh && CV._shaCache[path]) {
+    return Promise.resolve(CV._shaCache[path]);
+  }
+  const url = CV.apiBase(path) + "?ref=" + CV.GITHUB.branch + "&t=" + Date.now();
+  return fetch(url, {
     headers: { "Authorization": "Bearer " + CV.GITHUB.token, "Accept": "application/vnd.github+json" }
   })
   .then(function(r){
@@ -149,12 +155,16 @@ CV.apiGetSha = function(path){
     if(!r.ok) throw new Error("HTTP " + r.status);
     return r.json();
   })
-  .then(function(data){ return data ? data.sha : null; });
+  .then(function(data){
+    const sha = data ? data.sha : null;
+    if(sha) CV._shaCache[path] = sha;
+    return sha;
+  });
 };
 
 CV.apiPutJson = function(path, content, message, attempt){
   attempt = attempt || 0;
-  return CV.apiGetSha(path)
+  return CV.apiGetSha(path, attempt > 0)
     .then(function(sha){
       const body = {
         message: message || "Update " + path,
@@ -162,7 +172,8 @@ CV.apiPutJson = function(path, content, message, attempt){
         branch: CV.GITHUB.branch
       };
       if(sha) body.sha = sha;
-      return fetch(CV.apiBase(path), {
+      const url = CV.apiBase(path) + "?t=" + Date.now();
+      return fetch(url, {
         method: "PUT",
         headers: {
           "Authorization": "Bearer " + CV.GITHUB.token,
@@ -171,12 +182,19 @@ CV.apiPutJson = function(path, content, message, attempt){
         },
         body: JSON.stringify(body)
       }).then(function(r){
-        if((r.status === 409 || r.status === 422) && attempt < 3){
-          return new Promise(function(resolve){ setTimeout(resolve, 500); })
+        if((r.status === 409 || r.status === 422) && attempt < 5){
+          delete CV._shaCache[path];
+          const delay = 600 + attempt * 400;
+          return new Promise(function(resolve){ setTimeout(resolve, delay); })
             .then(function(){ return CV.apiPutJson(path, content, message, attempt + 1); });
         }
         if(!r.ok) throw new Error("HTTP " + r.status);
         return r.json();
+      }).then(function(data){
+        if(data && data.content && data.content.sha){
+          CV._shaCache[path] = data.content.sha;
+        }
+        return data;
       });
     });
 };

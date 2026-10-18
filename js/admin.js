@@ -105,7 +105,14 @@
           '<button class="btn btn-solid btn-sm" data-action="add-upcoming">' + CV.icon("plus") + 'Добавить будущий рейд</button>' +
           '<button class="btn btn-ghost btn-sm" data-action="goto-complaints">' + CV.icon("inbox") + 'Перейти к жалобам</button>' +
         '</div>' +
-      '</div></div>';
+      '</div></div>' +
+      (raids.length === 0 && complaints.length === 0
+        ? '<div class="card" style="margin-top:16px;border:2px dashed var(--green-400);background:var(--green-50)"><div class="card-body" style="text-align:center">' +
+            CV.icon("sprout") +
+            '<h3 style="margin:8px 0 6px;color:var(--green-900)">Добро пожаловать!</h3>' +
+            '<p class="card-desc" style="max-width:540px;margin:0 auto">Это чистая установка. На сайте пока нет рейдов и жалоб. Добавьте первый рейд через кнопку выше — он сразу появится у всех посетителей сайта.</p>' +
+          '</div></div>'
+        : '');
 
     el.querySelectorAll("[data-action]").forEach(function(b){
       b.addEventListener("click", function(){
