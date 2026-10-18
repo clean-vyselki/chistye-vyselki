@@ -83,23 +83,5 @@
     ],
     "participants": 0,
     "bags": 0
-  },
-  {
-    "id": "r-mvdwf9oy-bck24",
-    "type": "past",
-    "title": "Тестовый онлайн-рейд",
-    "date": "2026-10-18",
-    "time": "10:00",
-    "location": "ул. Тестовая, 5",
-    "description": "Тестовый рейд для проверки онлайн сохранения",
-    "tags": [
-      "Тест",
-      "Онлайн"
-    ],
-    "images": [
-      "https://raw.githubusercontent.com/clean-vyselki/chistye-vyselki/main/data/photos/raid-1792332381486-0-qj97.jpg?t=1792332382930"
-    ],
-    "participants": 5,
-    "bags": 10
   }
 ]
