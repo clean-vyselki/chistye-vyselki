@@ -13,18 +13,5 @@
     "images": [],
     "participants": 3,
     "bags": 5
-  },
-  {
-    "id": "r-mvdxylvf-4asr9",
-    "type": "past",
-    "title": "Test Raid Online 2",
-    "date": "2026-10-19",
-    "time": "11:00",
-    "location": "ул. Тест, 6",
-    "description": "Second test raid",
-    "tags": [],
-    "images": [],
-    "participants": 0,
-    "bags": 0
   }
 ]
