@@ -1,1 +1,17 @@
-[]
+[
+  {
+    "id": "r-mvdxxklv-qmiae",
+    "type": "past",
+    "title": "Test Raid Online",
+    "date": "2026-10-18",
+    "time": "10:00",
+    "location": "ул. Тест, 5",
+    "description": "Test raid",
+    "tags": [
+      "Test"
+    ],
+    "images": [],
+    "participants": 3,
+    "bags": 5
+  }
+]
