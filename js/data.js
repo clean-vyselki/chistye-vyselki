@@ -199,13 +199,15 @@ CV.apiPutJson = function(path, content, message, attempt){
     });
 };
 
-CV.apiPutBinary = function(path, base64, message){
+CV.apiPutBinary = function(path, base64, message, attempt){
+  attempt = attempt || 0;
   const body = {
     message: message || "Upload " + path,
     content: base64,
     branch: CV.GITHUB.branch
   };
-  return fetch(CV.apiBase(path), {
+  const url = CV.apiBase(path) + "?t=" + Date.now();
+  return fetch(url, {
     method: "PUT",
     headers: {
       "Authorization": "Bearer " + CV.GITHUB.token,
@@ -215,7 +217,12 @@ CV.apiPutBinary = function(path, base64, message){
     body: JSON.stringify(body)
   })
   .then(function(r){
-    if(r.status === 422) throw new Error("Файл с таким именем уже существует");
+    if(r.status === 422 && attempt < 3){
+      const uniquePath = path.replace(/(\.[^.]+)?$/, "-" + Math.random().toString(36).slice(2,6) + "$1");
+      return new Promise(function(resolve){ setTimeout(resolve, 300); })
+        .then(function(){ return CV.apiPutBinary(uniquePath, base64, message, attempt + 1); });
+    }
+    if(r.status === 422) throw new Error("Не удалось загрузить фото — попробуйте ещё раз");
     if(!r.ok) throw new Error("HTTP " + r.status);
     return r.json();
   })

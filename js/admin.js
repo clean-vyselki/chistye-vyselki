@@ -430,59 +430,86 @@
       saveBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:cvSpin .8s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Сохранение...';
 
       const uploadNewPhotos = function(){
+        const newlyUploadedUrls = [];
         const uploadTasks = photos.map(function(p, idx){
           if(p.indexOf("data:") === 0){
             return CV.resizeImage(photoFiles[idx], 1400, 0.82)
               .then(function(resized){
-                const fname = "raid-" + Date.now() + "-" + idx + "-" + Math.random().toString(36).slice(2,6) + ".jpg";
+                const fname = "raid-" + Date.now() + "-" + idx + "-" + Math.random().toString(36).slice(2,8) + ".jpg";
                 return CV.uploadPhotoRemote(resized.base64, fname);
               })
-              .then(function(url){ return { idx: idx, url: url }; });
+              .then(function(url){
+                newlyUploadedUrls.push(url);
+                return { idx: idx, url: url };
+              });
           }
           return Promise.resolve({ idx: idx, url: p });
         });
-        return Promise.all(uploadTasks).then(function(results){
+        const p = Promise.all(uploadTasks).then(function(results){
           return results.sort(function(a,b){ return a.idx - b.idx; }).map(function(r){ return r.url; });
         });
+        p._uploaded = newlyUploadedUrls;
+        return p;
+      };
+
+      const rollbackPhotos = function(urls){
+        if(!urls || !urls.length) return Promise.resolve();
+        return Promise.all(urls.map(function(u){ return CV.deletePhotoRemote(u); }))
+          .catch(function(){});
+      };
+
+      const saveRaidWithMerge = function(finalUrls){
+        return CV.fetchRaids().catch(function(){ return CV.loadRaids(); })
+          .then(function(freshRaids){
+            if(isEdit){
+              let found = false;
+              for(let i = 0; i < freshRaids.length; i++){
+                if(freshRaids[i].id === id){
+                  freshRaids[i].title = title;
+                  freshRaids[i].date = date;
+                  freshRaids[i].time = time;
+                  freshRaids[i].location = location;
+                  freshRaids[i].description = description;
+                  freshRaids[i].tags = tags;
+                  freshRaids[i].images = finalUrls;
+                  delete freshRaids[i].image;
+                  if(type === "past"){
+                    freshRaids[i].participants = people;
+                    freshRaids[i].bags = bags;
+                  }
+                  found = true;
+                  break;
+                }
+              }
+              if(!found){
+                throw new Error("Рейд не найден — возможно, он был удалён. Обновите страницу.");
+              }
+            }else{
+              freshRaids.push({
+                id: CV.genId("r"),
+                type: type,
+                title: title,
+                date: date,
+                time: time,
+                location: location,
+                description: description,
+                tags: tags,
+                images: finalUrls,
+                participants: people,
+                bags: bags
+              });
+            }
+            return CV.saveRaidsRemote(freshRaids, (isEdit ? "Update raid " : "Add raid ") + title);
+          });
       };
 
       uploadNewPhotos()
         .then(function(finalUrls){
-          const raids = CV.loadRaids();
-          if(isEdit){
-            for(let i = 0; i < raids.length; i++){
-              if(raids[i].id === id){
-                raids[i].title = title;
-                raids[i].date = date;
-                raids[i].time = time;
-                raids[i].location = location;
-                raids[i].description = description;
-                raids[i].tags = tags;
-                raids[i].images = finalUrls;
-                delete raids[i].image;
-                if(type === "past"){
-                  raids[i].participants = people;
-                  raids[i].bags = bags;
-                }
-                break;
-              }
-            }
-          }else{
-            raids.push({
-              id: CV.genId("r"),
-              type: type,
-              title: title,
-              date: date,
-              time: time,
-              location: location,
-              description: description,
-              tags: tags,
-              images: finalUrls,
-              participants: people,
-              bags: bags
+          const uploadedForRollback = uploadNewPhotos._uploaded || [];
+          return saveRaidWithMerge(finalUrls)
+            .catch(function(err){
+              return rollbackPhotos(uploadedForRollback).then(function(){ throw err; });
             });
-          }
-          return CV.saveRaidsRemote(raids, (isEdit ? "Update raid " : "Add raid ") + title);
         })
         .then(function(){
           close();
@@ -499,24 +526,28 @@
 
   function deleteRaid(id){
     if(!confirm("Удалить этот рейд? Действие нельзя отменить.")) return;
-    let raids = CV.loadRaids();
-    const raid = raids.filter(function(r){return r.id === id;})[0];
+    const localRaids = CV.loadRaids();
+    const raid = localRaids.filter(function(r){return r.id === id;})[0];
     if(!raid){
       CV.toast("Рейд уже удалён");
       const activePanel = document.querySelector(".admin-nav-item.active").dataset.panel;
       renderPanel(activePanel);
       return;
     }
-    raids = raids.filter(function(r){return r.id !== id;});
     CV.toast("Удаляю...");
-    CV.localSet(CV.STORAGE_KEYS.raids, raids);
     const activePanel = document.querySelector(".admin-nav-item.active").dataset.panel;
-    renderPanel(activePanel);
-    const deletePhotos = raid.images && raid.images.length
-      ? Promise.all(raid.images.map(function(url){ return CV.deletePhotoRemote(url); }))
-      : Promise.resolve();
-    deletePhotos
-      .then(function(){ return CV.saveRaidsRemote(raids, "Delete raid " + raid.title); })
+    CV.fetchRaids().catch(function(){ return localRaids; })
+      .then(function(freshRaids){
+        const updated = freshRaids.filter(function(r){return r.id !== id;});
+        CV.localSet(CV.STORAGE_KEYS.raids, updated);
+        renderPanel(activePanel);
+        const deletePhotos = raid.images && raid.images.length
+          ? Promise.all(raid.images.map(function(url){ return CV.deletePhotoRemote(url); }))
+          : Promise.resolve();
+        return deletePhotos.then(function(){
+          return CV.saveRaidsRemote(updated, "Delete raid " + raid.title);
+        });
+      })
       .then(function(){
         CV.toast("Рейд удалён");
         renderPanel(activePanel);

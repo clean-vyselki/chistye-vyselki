@@ -354,6 +354,7 @@
         });
       };
 
+      let uploadedPhotoUrl = "";
       let uploadChain;
       if(photoFile){
         const photoName = "c-" + Date.now() + "-" + Math.random().toString(36).slice(2,8) + ".jpg";
@@ -361,7 +362,10 @@
           .then(function(resized){
             return CV.uploadPhotoRemote(resized.base64, photoName);
           })
-          .then(function(url){ return url; })
+          .then(function(url){
+            uploadedPhotoUrl = url;
+            return url;
+          })
           .catch(function(err){
             throw new Error("Не удалось загрузить фото: " + err.message);
           });
@@ -375,6 +379,7 @@
           form.reset();
           photoFile = null;
           photoDataUrl = "";
+          uploadedPhotoUrl = "";
           photoLabel.textContent = "Нажмите, чтобы прикрепить фото";
           fileName.textContent = "";
           preview.style.display = "none";
@@ -383,6 +388,9 @@
           CV.toast("Жалоба отправлена");
         })
         .catch(function(err){
+          if(uploadedPhotoUrl){
+            CV.deletePhotoRemote(uploadedPhotoUrl).catch(function(){});
+          }
           alertBox.innerHTML = '<div class="alert alert-error">' + CV.icon("alert") + '<div>Не удалось отправить жалобу: ' + CV.escapeHtml(err.message) + '. Попробуйте позже.</div></div>';
         })
         .then(function(){ setSubmitLoading(false); });
