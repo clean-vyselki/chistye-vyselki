@@ -1,1 +1,11 @@
-[]
+[
+  {
+    "id": "c-mvdw4a1k-lg5s4",
+    "name": "Test Online User",
+    "address": "ул. Тестовая, 1",
+    "problem": "Тестовая жалоба для проверки онлайн-режима",
+    "photo": "",
+    "status": "new",
+    "createdAt": "2026-10-18T13:57:50.168Z"
+  }
+]
