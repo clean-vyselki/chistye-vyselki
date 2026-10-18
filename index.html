@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Чистые Выселки — сообщество за чистую станицу</title>
+<meta name="description" content="Чистые Выселки — сообщество жителей, которые очищают станицу Выселки от мусора. Информация о рейдах, подача жалоб, присоединиться к волонтёрам.">
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a href="index.html" class="brand">
+      <span class="logo-slot" id="logoSlot">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/><path d="M2 21c0-3 1.85-5.36 5.08-6"/></svg>
+      </span>
+      <span class="brand-text">
+        <span class="brand-title">Чистые Выселки</span>
+        <span class="brand-sub">Сообщество за чистую станицу</span>
+      </span>
+    </a>
+    <nav class="nav">
+      <div class="nav-links" id="navLinks">
+        <a href="#raids" class="active">Рейды</a>
+        <a href="#upcoming">Будущие рейды</a>
+        <a href="#complaint">Оставить жалобу</a>
+        <a href="#about">О нас</a>
+      </div>
+      <a href="admin/" class="admin-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Админка
+      </a>
+      <button class="burger" id="burger" aria-label="Меню">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="container hero-inner">
+    <div>
+      <h1>Чистые Выселки</h1>
+      <p class="lead">Сообщество жителей станицы Выселки, которые вместе очищают улицы, парки, берега и лесополосы от мусора. Присоединяйтесь к нашим рейдам или сообщите о проблемном месте.</p>
+      <div class="hero-actions">
+        <a href="#upcoming" class="btn btn-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Ближайшие рейды
+        </a>
+        <a href="#complaint" class="btn btn-outline">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Сообщить о мусоре
+        </a>
+      </div>
+    </div>
+    <div class="hero-card">
+      <h3>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Наш вклад в чистоту
+      </h3>
+      <div class="stats" id="heroStats">
+        <div class="stat"><div class="num" id="statRaids">0</div><div class="lbl">проведено рейдов</div></div>
+        <div class="stat"><div class="num" id="statBags">0</div><div class="lbl">мешков собрано</div></div>
+        <div class="stat"><div class="num" id="statPeople">0</div><div class="lbl">волонтёров</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section alt" id="raids">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <h2>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+          Прошедшие рейды
+        </h2>
+        <p>Отчёты о рейдах, которые мы уже провели. Каждый рейд — это конкретная улица, парк или берег, которые мы очистили вместе с жителями.</p>
+      </div>
+      <div class="tabs" id="raidTabs">
+        <button class="tab active" data-filter="all">Все</button>
+        <button class="tab" data-filter="past">Прошедшие</button>
+        <button class="tab" data-filter="upcoming">Будущие</button>
+      </div>
+    </div>
+    <div class="grid grid-raids" id="raidsGrid"></div>
+  </div>
+</section>
+
+<section class="section" id="upcoming">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <h2>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Предстоящие рейды
+        </h2>
+        <p>Запланированные акции. Приходите — каждый участник важен. Встречаемся в указанное время, перчатки и воду приносим с собой.</p>
+      </div>
+    </div>
+    <div class="grid grid-upcoming" id="upcomingList"></div>
+  </div>
+</section>
+
+<section class="section complaint-section" id="complaint">
+  <div class="container complaint-grid">
+    <div class="complaint-info">
+      <h2>Сообщите о месте, где нужен рейд</h2>
+      <p>Заметили свалку, незаконный мусор или проблемное место в станице? Заполните форму — мы проверим информацию и добавим место в план ближайших рейдов.</p>
+      <ul class="complaint-list">
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <span>Укажите точную улицу и номер дома — это поможет нам быстро найти место.</span>
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span>Опишите, что именно беспокоит — бытовой мусор, стройотходы, шины, пластик.</span>
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <span>Фото по желанию — приложите снимок, чтобы мы видели масштаб проблемы.</span>
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span>Ваши данные видит только администратор сообщества и не передаёт третьим лицам.</span>
+        </li>
+      </ul>
+    </div>
+
+    <div class="form-card">
+      <h3>Форма жалобы</h3>
+      <div id="complaintAlert"></div>
+      <form id="complaintForm" autocomplete="off">
+        <div class="field">
+          <label for="cName">Ваше имя <span class="req">*</span></label>
+          <input type="text" id="cName" name="name" placeholder="Как к вам обращаться" required maxlength="80">
+        </div>
+        <div class="field">
+          <label for="cAddress">Улица и номер, где можно провести рейд <span class="req">*</span></label>
+          <input type="text" id="cAddress" name="address" placeholder="Например: ул. Ленина, 45" required maxlength="120">
+        </div>
+        <div class="field">
+          <label for="cProblem">Что именно вас там беспокоит <span class="req">*</span></label>
+          <textarea id="cProblem" name="problem" placeholder="Бытовой мусор, стройотходы, шины, пластик и т.д." required maxlength="600"></textarea>
+        </div>
+        <div class="field">
+          <label>Фото по желанию</label>
+          <label class="file-drop" for="cPhoto">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span id="cPhotoLabel">Нажмите, чтобы прикрепить фото</span>
+            <span class="filename" id="cFileName"></span>
+          </label>
+          <input type="file" id="cPhoto" accept="image/*">
+          <div class="preview-img" id="cPreview" style="display:none"></div>
+        </div>
+        <button type="submit" class="btn btn-solid" style="width:100%;justify-content:center">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Отправить жалобу
+        </button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<section class="section alt" id="about">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <h2>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/><path d="M2 21c0-3 1.85-5.36 5.08-6"/></svg>
+          О сообществе
+        </h2>
+        <p>Кто мы, чем занимаемся и как присоединиться к нашим акциям.</p>
+      </div>
+    </div>
+    <div class="grid grid-raids">
+      <div class="card">
+        <div class="card-body">
+          <h3>Наша миссия</h3>
+          <p class="card-desc">Чистые Выселки — это инициатива жителей станицы Выселки и окрестностей. Мы объединяемся, чтобы убирать мусор на улицах, в парках, у водоёмов и вдоль дорог. Наша цель — сделать станицу чище и приятнее для жизни.</p>
+          <div class="card-tags">
+            <span class="tag">Экология</span>
+            <span class="tag">Волонтёрство</span>
+            <span class="tag">Местное сообщество</span>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-body">
+          <h3>Как проходят рейды</h3>
+          <p class="card-desc">Мы встречаемся в назначенном месте в указанное время, выдаём перчатки и мешки (или просим принести свои), распределяем зоны и приступаем к уборке. После рейда — вывозим собранный мусор на легальную свалку или контейнерную площадку.</p>
+          <div class="card-tags">
+            <span class="tag">Субботники</span>
+            <span class="tag">Воскресные акции</span>
+            <span class="tag">Большими группами</span>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-body">
+          <h3>Как присоединиться</h3>
+          <p class="card-desc">Следите за разделом «Предстоящие рейды» — там публикуются ближайшие акции. Приходите на встречу, приведите друзей и соседей. Если хотите предложить место для рейда — оставьте жалобу через форму выше.</p>
+          <div class="card-tags">
+            <span class="tag">Бесплатно</span>
+            <span class="tag">Любой возраст</span>
+            <span class="tag">Без регистрации</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <div class="brand">
+          <span class="logo-slot" style="background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#fff"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/><path d="M2 21c0-3 1.85-5.36 5.08-6"/></svg>
+          </span>
+          <span class="brand-text">
+            <span class="brand-title">Чистые Выселки</span>
+            <span class="brand-sub">Сообщество за чистую станицу</span>
+          </span>
+        </div>
+        <p style="margin-top:14px">Волонтёрское движение жителей станицы Выселки. Делаем нашу станицу чище вместе.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Разделы</h4>
+        <p><a href="#raids" style="color:rgba(255,255,255,.85)">Прошедшие рейды</a></p>
+        <p><a href="#upcoming" style="color:rgba(255,255,255,.85)">Будущие рейды</a></p>
+        <p><a href="#complaint" style="color:rgba(255,255,255,.85)">Оставить жалобу</a></p>
+        <p><a href="#about" style="color:rgba(255,255,255,.85)">О сообществе</a></p>
+      </div>
+      <div class="footer-col">
+        <h4>Контакты</h4>
+        <p style="display:flex;align-items:center;gap:8px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          станица Выселки, Краснодарский край
+        </p>
+        <p style="display:flex;align-items:center;gap:8px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          chistye.vyselki@mail.ru
+        </p>
+        <div class="social" style="margin-top:14px">
+          <a href="#" aria-label="VK">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.785 16.241s.288-.032.435-.193c.135-.148.131-.426.131-.426s-.019-1.302.576-1.495c.587-.19 1.341 1.262 2.142 1.82.605.422 1.064.33 1.064.33l2.137-.03s1.117-.071.587-.964c-.043-.073-.308-.661-1.588-1.87-1.34-1.264-1.16-1.059.453-3.246.983-1.332 1.376-2.145 1.253-2.493-.117-.332-.84-.244-.84-.244l-2.406.015s-.178-.024-.31.056c-.13.079-.213.262-.213.262s-.382 1.03-.89 1.907c-1.07 1.85-1.499 1.948-1.674 1.832-.407-.267-.305-1.575-.305-1.575s.04-1.504-.296-2.057c-.252-.415-.738-.319-.923-.244-.407.165-.617.466-.617.466s-.527 1.096-.587 1.832c-.06.737.001 1.864.001 1.864s-.06.295-.354.131c-.244-.135-.487-.487-.852-.964-.335-.435-.602-.949-.602-.949l-1.137-1.832s-.227-.453-.508-.262c-.294.198-.131 1.043-.131 1.043l.022 4.542s-.043.435.193.524c.27.105.852-.262.852-.262l1.95-1.65s.516-.786.786-.786z"/></svg>
+          </a>
+          <a href="#" aria-label="Telegram">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.944 4.364L18.48 20.04c-.262 1.16-.95 1.446-1.92.9l-5.32-3.92-2.57 2.475c-.285.285-.524.524-1.073.524l.384-5.418 9.86-8.91c.43-.384-.093-.596-.668-.213L4.27 13.24l-5.243-1.642c-1.14-.356-1.16-1.14.24-1.69l20.5-7.91c.95-.355 1.78.213 1.472 1.366z" transform="translate(0 1)"/></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; <span id="year">2026</span> Чистые Выселки. Все права защищены.</span>
+      <span>Сделано с заботой о природе</span>
+    </div>
+  </div>
+</footer>
+
+<button class="fab" id="fabTop" aria-label="Наверх" title="Наверх" style="display:none">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+</button>
+
+<script src="js/icons.js"></script>
+<script src="js/data.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
